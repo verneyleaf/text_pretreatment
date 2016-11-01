@@ -1,0 +1,220 @@
+
+
+
+
+利用Python抓取CSDN博客 - 黑翼天使23 - 博客园
+
+
+
+
+
+
+
+var currentBlogApp = 'bwangel23', cb_enable_mathjax=false;var isLogined=false;
+
+
+
+
+
+
+
+
+
+
+黑翼天使23
+程序让生活更美好！
+
+
+
+博客园
+首页
+新随笔
+
+
+
+管理
+
+
+
+
+
+
+
+
+
+
+
+
+
+利用Python抓取CSDN博客
+
+
+
+　　这两天发现了一篇好文章，陈皓写的makefile的教程，具体地址在这里《跟我一起写makefile》
+　　这篇文章一共分成了14个部分，我看东西又习惯在kindle上面看，感觉一篇一篇地复制成txt文本太弱了，索性就用python写了一个小爬虫，把这些文章全部都下载下来。
+　　
+　　这个程序主要可以分成这么几块内容，获取，分析，转换。
+　　程序的整体结构如下图所示：
+　　
+　　get_html.py程序的功能就是实现获取功能，将下载到的原始的html文件都存放到ori_html文件夹中。ana_html.py程序实现了上面的分析和转换两个功能，通过分析原始html文件，将包含正文的div块提取出来，存放到div_html文件夹的html文件中，再利用lynx函数将这些html文本转换成txt文本，存放到text文件夹中。
+ 
+　　第一，获取。
+　　这一步做的事情就是把这几篇文章的html文件全部都下载下来。这个就是构造一个http请求，然后请求回来一个html页面就好了。需要注意的就是这几篇文章存放路径的编号。比如第一篇文章，它的链接是这个：http://blog.csdn.net/haoel/article/details/2886，最后编号是2886。第二篇文章的链接是这个：http://blog.csdn.net/haoel/article/details/2887。最后编号是2887。至于最后一篇文章，第14篇文章的链接是这个：http://blog.csdn.net/haoel/article/details/2899，最后的编号是2899。相信从这里大家可以看出规律来了吧，从第一篇文章到最后一篇文章，存放路径的编号依次就是从2886到2899递增。那我下载html页面的时候，其实就是只要把这个编号不断递增，就可以把所有14篇文章都给下载下来了。具体代码如下：
+
+ 1 #!/usr/bin/env python
+ 2 # -* - coding: UTF-8 -* -
+ 3 
+ 4 import httplib
+ 5 from time import sleep
+ 6 
+ 7 def writeFile(html,list_num):
+ 8     filename = "./ori_html/htmlfile%d.html" % list_num
+ 9     file_obj = open(filename,"w")
+10     file_obj.write(html)
+11     file_obj.close()
+12     print "%s文件已经写入" % filename
+13 def getHTML(list_num):
+14     print '准备获取%d号HTML文档成功' % list_num
+15     url = "http://blog.csdn.net/haoel/article/details/%d" % list_num
+16     conn = httplib.HTTPConnection("blog.csdn.net")
+17     conn.request(method="GET",url=url)
+18     response = conn.getresponse()
+19     res= response.read()
+20     print '获取%d号HTML文档成功' % list_num
+21     writeFile(res,list_num)
+22 def getHTMLs():
+23         for num in range(2886,2900):
+24             sleep(1)
+25         　　 getHTML(num)
+26 
+27 getHTMLs()
+
+　　主函数getHTMLs通过调用getHTML来下载多个页面。每下载完一个页面，就暂停一秒钟，这是为了防止访问速度过快，让服务器认定这是攻击行为，把本机IP给屏蔽掉了。getHTML函数就是根据不同的编号，下载不同的页面，然后将下载到的页面存放到ori_html文件夹中，意思就是原始的html文件（original html）。
+ 
+　　第二，分析
+　　上面把所有的html文件都给下载好了，但是并不是这个页面的所有的内容都是我们想要的，我们只想要中间的正文部分，如下图所示：
+　　
+　　在这个页面中我们只想要那个画红线的部分。
+　　这个要具体怎么做呢，就是通过chrome分析原界面，可以看到中间的正文部分是通过一个id为article_content的div来表示的，如下图所示，
+　　
+　　我们只要把这个div给获取出来了，那么就能得到正文内容了。
+　　获取了这个div之后，再把它存放到一个html文件中，然后再来通过lynx命令，就能把这个篇文章下载到本地了，具体代码如下：
+
+ 1 #!/usr/bin/env python
+ 2 # -* - coding: UTF-8 -* -
+ 3 
+ 4 from bs4 import BeautifulSoup
+ 5 import os
+ 6 
+ 7 def readFile(filename):
+ 8         print "read the %s" % filename
+ 9         file_obj = open(filename,"r")
+10         html = file_obj.read()
+11         file_obj.close()
+12         return html
+13 
+14 def writeFile(html,list_num):
+15         filename = "./div_html/div_html_%d.html" % list_num
+16         if os.path.exists(filename):
+17                 print "%s 已经存在" % filename
+18                 return -1
+19         file_obj = open(filename,"w")
+20         print >> file_obj,html
+21         print "%s已经写入" % filename
+22 
+23 def formFile(list_num):
+24         outnum = list_num - 2886 + 1
+25         filename = "./div_html/div_html_%d.html" % list_num
+26         outname = "text/makefile_%d.txt" % outnum
+27         cmd = "lynx --dump %s > %s" % (filename,outname)
+28         os.system(cmd)
+29         print "%s已经写入" % outname
+30 
+31 def main():
+32         for num in range(2886,2900):
+33                 filename = "./ori_html/htmlfile%d.html" % num
+34                 if not os.path.exists(filename):
+35                         print "%s donn't exist" % filename
+36                         continue
+37                 html_doc = readFile(filename)
+38                 soup = BeautifulSoup(html_doc)
+39                 div_html = soup.find_all("div",id="article_content")
+40                 writeFile(div_html[0],num)
+41                 formFile(num)
+42 
+43 main()
+
+ 　　在主函数中通过for循环依次遍历每个文件，readFile函数的功能就是读取html文件内的html代码存放到html_doc里面。然后再通过bs4的find_all方法，找到id为article_content的div节点。这里返回的结果是一个tag元素列表，所以底下给writeFile函数传递的参数为div_html[0]，将这个tag元素传递进去。
+　　在writeFile函数中，将传递进来的tag元素的所有内容都写入到div_html文件夹的文件中。然后再在formFile(格式化文件，format file)函数中，利用lynx命令，将这个包含正文的div转换成txt文本，写入到text文件夹的文本文件中去。
+　　这里需要注意的一点就是writeFile函数中，将print函数打印的内容写入文件的方法直接就是print >> 文件对象名，print的参数，这样相当于做了一个数据流重定向，将本应打印到屏幕上的东西打印到文件中去了。
+ 
+　　最后下载下来的文档如下所示：
+　　
+　　OK，就是这么多了。这个程序写的比较仓促，感觉程序中还有许多冗余的地方，欢迎各位指正！
+
+
+
+
+
+
+
+
+
+
+posted @ 2015-05-07 16:51 黑翼天使23 阅读(...) 评论(...)  编辑 收藏
+
+var allowComments=true,cb_blogId=205133,cb_entryId=4485394,cb_blogApp=currentBlogApp,cb_blogUserGuid='9c71b62b-9d6d-e411-b908-9dcfd8948a71',cb_entryCreatedDate='2015/5/7 16:51:00';loadViewCount(cb_entryId);
+
+var commentManager = new blogCommentManager();commentManager.renderComments(0);
+
+
+
+刷新评论刷新页面返回顶部
+
+
+
+
+
+
+
+
+
+
+    fixPostBody();
+    setTimeout(function () { incrementViewCount(cb_entryId); }, 50);
+    deliverAdT2();
+    deliverAdC1();
+    deliverAdC2();    
+    loadNewsAndKb();
+    loadBlogSignature();
+    LoadPostInfoBlock(cb_blogId, cb_entryId, cb_blogApp, cb_blogUserGuid);
+    GetPrevNextPost(cb_entryId, cb_blogId, cb_entryCreatedDate);
+    loadOptUnderPost();
+    GetHistoryToday(cb_blogId, cb_blogApp, cb_entryCreatedDate);   
+
+
+
+
+
+
+
+
+公告
+loadBlogNews();
+
+loadBlogDefaultCalendar();
+
+loadBlogSideColumn();
+
+
+
+
+
+
+
+
+Copyright ©2016 黑翼天使23
+	
+
+
+
