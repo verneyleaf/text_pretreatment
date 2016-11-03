@@ -3,6 +3,7 @@
 import http.client
 from bs4 import BeautifulSoup
 from time import sleep
+import jieba
 
 url = "http://www.cnblogs.com/bwangel23/p/4485394.html"
 url1 = "http://supercomputingblog.com/cuda/cuda-tutorial-4-atomic-operations"
@@ -22,8 +23,12 @@ div_html = soup.find_all("div", id = "cnblogs_post_body") # 找到所有<p>标�
 #print (soup.title().name)
 filename = "./text1.text"
 test = soup.get_text()
-file_obj = open(filename, "w")
-file_obj.write(test)
-file_obj.close()
+#print (type(test))
+
+seg_list = jieba.cut("我爱中华人民共和国")
+print ("/".join(seg_list))
+#file_obj = open(filename, "w")
+#file_obj.write(test)
+#file_obj.close()
 #print (soup.get_text()) # 获取所有文字的内容
 
