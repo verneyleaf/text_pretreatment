@@ -1,30 +1,42 @@
-# -*- coding:utf-8 -*-
-
+# -*- coding: utf-8 -*-
 import jieba
-#import codecs
+from multiprocessing import Pool
+import os
 
-content = []
-def fenci(name):
-	with open(name, 'r') as f:
-		file = f.read()
-		f_ = open("stopwords.txt", "r")
-		#print(f_.read().decode())
-		for line in f_.readlines():
-			#print (type(line))
-			line = line.strip('\n')
-			#print (line)
-			content.append(line)
-			#print (line.encode('utf-8'))
-		for i in jieba.cut(file):
+def fenci(name1, name2, content):
+	file1 = open(name1, "w")
+	with open(name2, "r") as file2:
+		thing = file2.read()
+		#thing = thing.decode("utf-8")
+		for i in jieba.cut(thing):
+			i = ''.join(i.split())
+			#i = i.decode("utf-8")
 			if i in content:
 				pass
 			else:
-				print(i)
-				#content.append(i)	
-		f_.close()
+				file1.write(i + " ")
+	file1.close()
 
 
-fenci("chinese/weibo181.txt")
-print (content)
-	                                                                                                                                                                                                                                                                                                                                          
-	
+
+if __name__ == "__main__":
+	content = []
+	with open("CNstopword.txt", "r") as f:
+		for line in f.readlines():
+			#line = line.decode("utf-8")
+			line = line.strip("\n")
+			line = line.strip(" ")
+			content.append(line)
+
+	#name1 = "CN\\weibo1.txt"
+	#name2 = "Chinese\\weibo1.txt" 
+	#fenci(name1, name2, content)
+
+	p = Pool(4)
+	for i in range(1,501):
+		name1 = "CN/weibo%d.txt" %(i)
+		name2 = "chinese/weibo%d.txt" %(i)
+		print (name1 + " " + name2)
+		p.apply_async(fenci, args=(name1, name2, content))
+	p.close()
+	p.join()
