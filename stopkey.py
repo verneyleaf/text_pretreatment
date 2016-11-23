@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-# Windows Version
 import jieba
 from multiprocessing import Pool
 import os
@@ -10,11 +9,12 @@ def fenci(name1, name2, content):
 		thing = file2.read()
 		#thing = thing.decode("utf-8")
 		for i in jieba.cut(thing):
+			i = ''.join(i.split())
 			#i = i.decode("utf-8")
 			if i in content:
 				pass
 			else:
-				file1.write(i + "\n")
+				file1.write(i + " ")
 	file1.close()
 
 
@@ -33,9 +33,9 @@ if __name__ == "__main__":
 	#fenci(name1, name2, content)
 
 	p = Pool(4)
-	for i in range(9):
-		name1 = "CN\\weibo%d.txt" %(i)
-		name2 = "Chinese\\weibo%d.txt" %(i)
+	for i in range(1,501):
+		name1 = "CN/weibo%d.txt" %(i)
+		name2 = "chinese/weibo%d.txt" %(i)
 		print (name1 + " " + name2)
 		p.apply_async(fenci, args=(name1, name2, content))
 	p.close()
