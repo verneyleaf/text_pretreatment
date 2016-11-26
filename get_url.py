@@ -23,7 +23,7 @@ with open("url.txt", "w") as f:
 
 			subresponse = urllib.request.urlopen(head + url)
 			subhtml = subresponse.read().decode('utf-8')
-			subres_url = r'<div class="story-body_inner" property="articleBody"'
+			subres_url = r'.*?\bclass="story-body__inner".*?\bproperty="articleBody".*?'
 			sublink = re.findall(subres_url, subhtml)
 			ff = open("content_%d.txt" %(item), "w")
 			for subitem in sublink:
